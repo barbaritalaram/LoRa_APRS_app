@@ -14,6 +14,8 @@ import 'domain/usecases/disconnect_from_device_usecase.dart';
 import 'domain/usecases/scan_for_devices_usecase.dart';
 import 'presentation/features/bluetooth_scan/bloc/bluetooth_scan_bloc.dart';
 import 'presentation/features/device_connection/bloc/device_connection_bloc.dart';
+import 'presentation/features/chat/bloc/chat_bloc.dart';
+import 'domain/usecases/get_message_stream_usecase.dart';
 
 // Service Locator
 final sl = GetIt.instance;
@@ -28,12 +30,17 @@ Future<void> init() async {
         connectToDeviceUseCase: sl(),
         disconnectFromDeviceUseCase: sl(),
       ));
+  sl.registerFactory(() => ChatBloc(
+        sendMessageUseCase: sl(),
+        getMessageStreamUseCase: sl(),
+      ));
 
   // Use Cases
   sl.registerLazySingleton(() => SendMessageUseCase(sl()));
   sl.registerLazySingleton(() => ScanForDevicesUseCase(sl()));
   sl.registerLazySingleton(() => ConnectToDeviceUseCase(sl()));
   sl.registerLazySingleton(() => DisconnectFromDeviceUseCase(sl()));
+  sl.registerLazySingleton(() => GetMessageStreamUseCase(sl()));
 
   // Repositories
   sl.registerLazySingleton<IMessageRepository>(

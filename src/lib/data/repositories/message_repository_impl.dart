@@ -16,8 +16,9 @@ class MessageRepositoryImpl implements IMessageRepository {
 
   @override
   Stream<Message> getMessages() {
-    // For now, just streams from remote. Could be combined with local.
-    return remoteDatasource.getMessageStream();
+    return remoteDatasource
+        .getMessageStream()
+        .map((messageModel) => messageModel.toEntity());
   }
 
   @override
@@ -28,14 +29,7 @@ class MessageRepositoryImpl implements IMessageRepository {
 
   @override
   Future<void> sendMessage(Message message) {
-     final messageModel = MessageModel(
-      id: message.id,
-      senderId: message.senderId,
-      recipientId: message.recipientId,
-      payload: message.payload,
-      timestamp: message.timestamp,
-      isEncrypted: message.isEncrypted,
-    );
+    final messageModel = MessageModel.fromEntity(message);
     return remoteDatasource.sendMessage(messageModel);
   }
 

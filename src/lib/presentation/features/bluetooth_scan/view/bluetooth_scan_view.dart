@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:src/domain/entities/device.dart';
 import 'package:src/presentation/features/bluetooth_scan/bloc/bluetooth_scan_bloc.dart';
+import 'package:src/presentation/features/chat/view/chat_page.dart';
 import 'package:src/presentation/features/device_connection/bloc/device_connection_bloc.dart';
 
 class BluetoothScanView extends StatelessWidget {
@@ -13,36 +14,53 @@ class BluetoothScanView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Bluetooth Scanner'),
       ),
-      body: BlocBuilder<BluetoothScanBloc, BluetoothScanState>(
-        builder: (context, state) {
-          if (state is ScanInProgress) {
-            return const Center(child: CircularProgressIndicator());
+      body: BlocListener<DeviceConnectionBloc, DeviceConnectionState>(
+        listener: (context, state) {
+          if (state is ConnectionSuccess) {
+            final scanState = context.read<BluetoothScanBloc>().state;
+            if (scanState is ScanSuccess) {
+              final device = scanState.devices.firstWhere((d) => d.id == state.deviceId);
+              Navigator.of(context).push(ChatPage.route(device: device));
+            }
+          } else if (state is ConnectionFailure) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text('Connection Failed: ${state.error}')),
+              );
           }
-          if (state is ScanFailure) {
-            return Center(
-              child: Text('Error: ${state.error}'),
-            );
-          }
-          if (state is ScanSuccess) {
-            if (state.devices.isEmpty) {
-              return const Center(
-                child: Text('No devices found. Try scanning again.'),
+        },
+        child: BlocBuilder<BluetoothScanBloc, BluetoothScanState>(
+          builder: (context, state) {
+            if (state is ScanInProgress) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is ScanFailure) {
+              return Center(
+                child: Text('Error: ${state.error}'),
               );
             }
-            return BlocBuilder<DeviceConnectionBloc, DeviceConnectionState>(
-              builder: (context, connectionState) {
-                return DeviceList(
-                  devices: state.devices,
-                  connectionState: connectionState,
+            if (state is ScanSuccess) {
+              if (state.devices.isEmpty) {
+                return const Center(
+                  child: Text('No devices found. Try scanning again.'),
                 );
-              },
+              }
+              return BlocBuilder<DeviceConnectionBloc, DeviceConnectionState>(
+                builder: (context, connectionState) {
+                  return DeviceList(
+                    devices: state.devices,
+                    connectionState: connectionState,
+                  );
+                },
+              );
+            }
+            // Initial State
+            return const Center(
+              child: Text('Press the button to start scanning for devices.'),
             );
-          }
-          // Initial State
-          return const Center(
-            child: Text('Press the button to start scanning for devices.'),
-          );
-        },
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () =>
