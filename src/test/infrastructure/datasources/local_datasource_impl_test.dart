@@ -1,23 +1,34 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:mockito/mockito.dart';
 import 'package:src/data/models/message_model.dart';
 import 'package:src/infrastructure/datasources/local_datasource_impl.dart';
+import 'package:src/infrastructure/services/logger_service.dart';
+import 'package:src/injection_container.dart';
+
+class MockLoggerService extends Mock implements LoggerService {}
 
 void main() {
   late LocalDatasourceImpl datasource;
+  late MockLoggerService mockLoggerService;
 
   setUpAll(() async {
     // Use an in-memory database for tests
     Hive.init('test_path'); 
     Hive.registerAdapter(MessageModelAdapter());
+    
+    // Register mock dependency
+    mockLoggerService = MockLoggerService();
+    sl.registerLazySingleton<LoggerService>(() => mockLoggerService);
   });
 
   setUp(() async {
-    datasource = LocalDatasourceImpl();
+    datasource = LocalDatasourceImpl(logger: mockLoggerService);
   });
 
   tearDown(() async {
     await Hive.deleteFromDisk();
+    await sl.reset(); // Reset GetIt container
   });
 
   final testMessage = MessageModel(

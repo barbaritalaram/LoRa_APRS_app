@@ -39,7 +39,7 @@ The system architecture is designed following Clean Architecture and Domain-Driv
 
 ### 4. Infrastructure Layer
 - **Components:**
-  - External services
+  - External services (e.g. `LoggerService`)
   - Utilities
   - Configuration
 - **Responsibilities:**

@@ -7,11 +7,15 @@ import 'domain/repositories/i_message_repository.dart';
 import 'domain/usecases/send_message_use_case.dart';
 import 'infrastructure/datasources/local_datasource_impl.dart';
 import 'infrastructure/datasources/remote_datasource_impl.dart';
+import 'infrastructure/services/logger_service.dart';
 
 // Service Locator
 final sl = GetIt.instance;
 
 void init() {
+  // Services
+  sl.registerLazySingleton(() => LoggerService());
+
   // Use Cases
   sl.registerLazySingleton(() => SendMessageUseCase(sl()));
 
@@ -22,7 +26,9 @@ void init() {
 
   // Datasources
   sl.registerLazySingleton<IRemoteDatasource>(() => RemoteDatasourceImpl());
-  sl.registerLazySingleton<ILocalDatasource>(() => LocalDatasourceImpl());
+  sl.registerLazySingleton<ILocalDatasource>(
+    () => LocalDatasourceImpl(logger: sl()),
+  );
 
   // External (e.g., Bluetooth client, DB client)
   // Example: sl.registerLazySingleton(() => SomeBluetoothClient());
