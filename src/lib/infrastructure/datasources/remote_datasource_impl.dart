@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:src/domain/entities/device.dart' as app;
 import 'package:src/infrastructure/services/logger_service.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,8 +10,8 @@ import '../../data/models/message_model.dart';
 
 // This will be implemented using flutter_blue or another Bluetooth package.
 class RemoteDatasourceImpl implements IRemoteDatasource {
-  final FlutterBlue _flutterBlue = FlutterBlue.instance;
   final LoggerService _logger;
+  final Map<String, BluetoothDevice> _scannedDevices = {};
 
   RemoteDatasourceImpl({required LoggerService logger}) : _logger = logger;
 
@@ -19,10 +19,12 @@ class RemoteDatasourceImpl implements IRemoteDatasource {
   Stream<List<app.Device>> scanForDevices() async* {
     if (await _requestPermissions()) {
       _logger.i('Starting Bluetooth device scan...');
+      _scannedDevices.clear();
       final Set<app.Device> foundDevices = {};
 
-      final scanSubscription = _flutterBlue.scanResults.listen((results) {
+      final scanSubscription = FlutterBluePlus.scanResults.listen((results) {
         for (ScanResult r in results) {
+          _scannedDevices[r.device.id.toString()] = r.device;
           if (r.device.name.isNotEmpty &&
               (r.device.name.toLowerCase().contains('lora') ||
                   r.device.name.toLowerCase().contains('aprs'))) {
@@ -35,9 +37,9 @@ class RemoteDatasourceImpl implements IRemoteDatasource {
         }
       });
 
-      _flutterBlue.startScan(timeout: const Duration(seconds: 10));
+      FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
       await Future.delayed(const Duration(seconds: 10));
-      _flutterBlue.stopScan();
+      FlutterBluePlus.stopScan();
 
       yield foundDevices.toList();
       scanSubscription.cancel();
@@ -68,7 +70,14 @@ class RemoteDatasourceImpl implements IRemoteDatasource {
 
   @override
   Future<void> connectToDevice(app.Device device) async {
-    final BluetoothDevice bleDevice = BluetoothDevice.fromId(device.id);
+    final BluetoothDevice? bleDevice = _scannedDevices[device.id];
+
+    if (bleDevice == null) {
+      final err = 'Device ${device.name} not in cache. Please scan again.';
+      _logger.e(err);
+      throw Exception(err);
+    }
+
     _logger.i('Connecting to device: ${device.name} (${device.id})');
     try {
       await bleDevice.connect(autoConnect: false);
@@ -81,7 +90,14 @@ class RemoteDatasourceImpl implements IRemoteDatasource {
 
   @override
   Future<void> disconnectDevice(app.Device device) async {
-    final BluetoothDevice bleDevice = BluetoothDevice.fromId(device.id);
+    final BluetoothDevice? bleDevice = _scannedDevices[device.id];
+
+    if (bleDevice == null) {
+      final err = 'Device ${device.name} not in cache. Please scan again.';
+      _logger.e(err);
+      throw Exception(err);
+    }
+      
     _logger.i('Disconnecting from device: ${device.name}');
     try {
       await bleDevice.disconnect();

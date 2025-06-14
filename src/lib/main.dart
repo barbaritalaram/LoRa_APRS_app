@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'package:src/domain/usecases/scan_for_devices_usecase.dart';
+import 'package:src/infrastructure/services/logger_service.dart';
+
 import 'injection_container.dart' as di;
 import 'data/models/message_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Hive Initialization
+  // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(MessageModelAdapter());
+  await Hive.openBox<MessageModel>('messagesBox');
   
   // Dependency Injection
-  di.init(); 
+  await di.init(); 
   
   runApp(const MyApp());
 }
@@ -24,26 +28,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'LoRa APRS App',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const Scaffold(
+        body: Center(
+          child: Text('Welcome to LoRa APRS App'),
+        ),
+      ),
     );
   }
 }

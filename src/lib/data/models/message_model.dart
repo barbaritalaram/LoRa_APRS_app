@@ -59,6 +59,15 @@ class MessageModel extends Message {
         isEncrypted: entity.isEncrypted,
       );
 
+  Message toEntity() => Message(
+        id: id,
+        senderId: senderId,
+        recipientId: recipientId,
+        payload: payload,
+        timestamp: timestamp,
+        isEncrypted: isEncrypted,
+      );
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

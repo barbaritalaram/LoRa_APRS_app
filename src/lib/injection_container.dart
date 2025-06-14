@@ -16,7 +16,7 @@ import 'domain/usecases/scan_for_devices_usecase.dart';
 // Service Locator
 final sl = GetIt.instance;
 
-void init() {
+Future<void> init() async {
   // Services
   sl.registerLazySingleton(() => LoggerService());
 
