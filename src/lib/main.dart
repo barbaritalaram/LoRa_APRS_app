@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
-import 'injection_container.dart' as di;
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
-  di.init(); // Initialize dependencies
+import 'injection_container.dart' as di;
+import 'data/models/message_model.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Hive Initialization
+  await Hive.initFlutter();
+  Hive.registerAdapter(MessageModelAdapter());
+  
+  // Dependency Injection
+  di.init(); 
+  
   runApp(const MyApp());
 }
 

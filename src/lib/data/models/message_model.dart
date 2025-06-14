@@ -1,13 +1,35 @@
+import 'package:hive/hive.dart';
 import '../../domain/entities/message.dart';
 
+part 'message_model.g.dart';
+
+@HiveType(typeId: 0)
 class MessageModel extends Message {
+  @HiveField(0)
+  final String id;
+
+  @HiveField(1)
+  final String senderId;
+
+  @HiveField(2)
+  final String recipientId;
+
+  @HiveField(3)
+  final String payload;
+
+  @HiveField(4)
+  final DateTime timestamp;
+
+  @HiveField(5)
+  final bool isEncrypted;
+
   MessageModel({
-    required String id,
-    required String senderId,
-    required String recipientId,
-    required String payload,
-    required DateTime timestamp,
-    bool isEncrypted = false,
+    required this.id,
+    required this.senderId,
+    required this.recipientId,
+    required this.payload,
+    required this.timestamp,
+    this.isEncrypted = false,
   }) : super(
           id: id,
           senderId: senderId,

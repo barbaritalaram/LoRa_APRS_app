@@ -2,167 +2,89 @@
 
 ## Overview
 
-This document defines the storage strategy for the LoRa APRS application, including local persistence, caching, and data management.
+This document defines the storage strategy for the LoRa APRS application, focusing on local persistence using the **Hive** NoSQL database for its performance and simplicity in Flutter.
 
-## Storage Types
+## Storage Strategy: Hive
 
-### 1. SQLite Database
+Instead of a relational SQL database, we use **Hive**, a lightweight and fast key-value database written in pure Dart. It's ideal for storing structured data on the device.
 
-#### Schema
-```sql
--- Version 1
-CREATE TABLE devices (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL,
-  firmware TEXT NOT NULL,
-  is_connected INTEGER NOT NULL,
-  last_seen INTEGER NOT NULL
-);
+### 1. Hive Boxes
 
-CREATE TABLE messages (
-  id TEXT PRIMARY KEY,
-  sender_id TEXT NOT NULL,
-  recipient_id TEXT,
-  content TEXT NOT NULL,
-  type TEXT NOT NULL,
-  is_encrypted INTEGER NOT NULL,
-  timestamp INTEGER NOT NULL,
-  status TEXT NOT NULL,
-  FOREIGN KEY (sender_id) REFERENCES devices(id),
-  FOREIGN KEY (recipient_id) REFERENCES devices(id)
-);
+Hive stores data in "Boxes," which can be thought of as tables in a traditional database. For this project, we will use a primary box for messages.
 
-CREATE TABLE locations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  device_id TEXT NOT NULL,
-  latitude REAL NOT NULL,
-  longitude REAL NOT NULL,
-  altitude REAL NOT NULL,
-  speed REAL NOT NULL,
-  course REAL NOT NULL,
-  timestamp INTEGER NOT NULL,
-  FOREIGN KEY (device_id) REFERENCES devices(id)
-);
+-   **`messages_box`**: Stores all `MessageModel` objects, using the message `id` as the key.
 
-CREATE TABLE device_status (
-  device_id TEXT PRIMARY KEY,
-  battery_level INTEGER NOT NULL,
-  signal_strength INTEGER NOT NULL,
-  error_count INTEGER NOT NULL,
-  uptime INTEGER NOT NULL,
-  timestamp INTEGER NOT NULL,
-  FOREIGN KEY (device_id) REFERENCES devices(id)
-);
+### 2. Hive TypeAdapters
 
-CREATE TABLE configurations (
-  device_id TEXT PRIMARY KEY,
-  settings TEXT NOT NULL,
-  last_update INTEGER NOT NULL,
-  FOREIGN KEY (device_id) REFERENCES devices(id)
-);
+To store custom objects, Hive needs `TypeAdapter`s that tell it how to convert an object to and from bytes. These are generated automatically.
+
+-   **`MessageModelAdapter`**: Handles serialization and deserialization for the `MessageModel`.
+
+```dart
+// lib/data/models/message_model.dart
+
+@HiveType(typeId: 0)
+class MessageModel extends Message {
+  @HiveField(0)
+  final String id;
+  // ... other fields
+}
 ```
 
-#### Indexes
-```sql
-CREATE INDEX idx_messages_timestamp ON messages(timestamp);
-CREATE INDEX idx_locations_timestamp ON locations(timestamp);
-CREATE INDEX idx_device_status_timestamp ON device_status(timestamp);
-```
+### 3. Data Versioning and Migration
 
-### 2. Preferences Storage
+While Hive is schemaless, changes to data models (`TypeAdapter`s) require version management. If a field is added or removed from a model in a future app version, the `@HiveType`'s `typeId` and `@HiveField` indices must be managed carefully to ensure backward compatibility or to trigger a data migration process.
+
+---
+
+## Other Storage Types
+
+### 1. Preferences Storage (using Hive)
+
+For simple key-value settings (like theme, language), we can use a separate, simple Hive box instead of `shared_preferences`.
+
+-   **`settings_box`**: Stores user preferences.
 
 #### Keys
 ```dart
-class StorageKeys {
+class PreferenceKeys {
   static const String THEME = 'theme';
   static const String LANGUAGE = 'language';
-  static const String NOTIFICATIONS = 'notifications';
-  static const String ENCRYPTION = 'encryption';
-  static const String LAST_SYNC = 'last_sync';
 }
 ```
 
-#### Values
-```dart
-class StorageValues {
-  static const String THEME_LIGHT = 'light';
-  static const String THEME_DARK = 'dark';
-  static const String LANGUAGE_EN = 'en';
-  static const String LANGUAGE_ES = 'es';
-}
-```
+### 2. File Cache
 
-### 3. File Cache
+This remains unchanged and will be managed by a separate caching mechanism if needed for images or map tiles.
 
-#### Structure
-```
-/cache
-  /images
-    /avatars
-    /icons
-  /maps
-    /tiles
-    /markers
-  /temp
-    /downloads
-    /uploads
-```
-
-#### Policies
-- Maximum size: 20MB
-- Lifetime: 7 days
-- Automatic cleanup
-- Deletion priority
+---
 
 ## Implementation
 
-### 1. Database Manager
+### 1. Hive Initialization & `LocalDatasourceImpl`
+
+The local data source implementation directly uses the Hive API to interact with the boxes.
+
 ```dart
-class DatabaseManager {
-  static const String DATABASE_NAME = 'lora_aprs.db';
-  static const int DATABASE_VERSION = 1;
+// lib/infrastructure/datasources/local_datasource_impl.dart
+
+class LocalDatasourceImpl implements ILocalDatasource {
   
-  Future<Database> get database async {
-    // Implementation
+  Future<Box<MessageModel>> _openBox() async {
+    return await Hive.openBox<MessageModel>('messages_box');
   }
-  
-  Future<void> initDatabase() async {
-    // Implementation
+
+  @override
+  Future<void> cacheMessage(MessageModel message) async {
+    final box = await _openBox();
+    await box.put(message.id, message);
   }
+
+  // ...
 }
 ```
 
-### 2. Preferences Manager
-```dart
-class PreferencesManager {
-  static const String PREFERENCES_NAME = 'lora_aprs_prefs';
-  
-  Future<void> setString(String key, String value) async {
-    // Implementation
-  }
-  
-  Future<String?> getString(String key) async {
-    // Implementation
-  }
-}
-```
-
-### 3. Cache Manager
-```dart
-class CacheManager {
-  static const int MAX_SIZE = 20 * 1024 * 1024; // 20MB
-  static const Duration MAX_AGE = Duration(days: 7);
-  
-  Future<void> cacheFile(String key, File file) async {
-    // Implementation
-  }
-  
-  Future<File?> getCachedFile(String key) async {
-    // Implementation
-  }
-}
-```
+This approach centralizes data access logic and abstracts the underlying storage mechanism from the rest of the application.
 
 ## Operations
 

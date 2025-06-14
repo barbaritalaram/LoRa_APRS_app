@@ -1,19 +1,30 @@
+import 'package:hive/hive.dart';
+
 import '../../data/datasources/i_local_datasource.dart';
 import '../../data/models/message_model.dart';
 
+const String messagesBoxName = 'messages_box';
+
 // This will be implemented using a local database like Hive or SQLite.
 class LocalDatasourceImpl implements ILocalDatasource {
-  @override
-  Future<void> cacheMessage(MessageModel message) {
-    // TODO: Implement caching logic with Hive
-    print('Message ${message.id} cached.');
-    return Future.value();
+  
+  LocalDatasourceImpl() {
+    _openBox();
+  }
+
+  Future<Box<MessageModel>> _openBox() async {
+    return await Hive.openBox<MessageModel>(messagesBoxName);
   }
 
   @override
-  Future<List<MessageModel>> getAllMessages() {
-    // TODO: Implement message retrieval from Hive
-    print('Retrieving all messages from cache.');
-    return Future.value([]);
+  Future<void> cacheMessage(MessageModel message) async {
+    final box = await _openBox();
+    await box.put(message.id, message);
+  }
+
+  @override
+  Future<List<MessageModel>> getAllMessages() async {
+    final box = await _openBox();
+    return box.values.toList();
   }
 } 
