@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:src/domain/entities/device.dart';
 import 'package:src/presentation/features/bluetooth_scan/bloc/bluetooth_scan_bloc.dart';
+import 'package:src/presentation/features/device_connection/bloc/device_connection_bloc.dart';
 
 class BluetoothScanView extends StatelessWidget {
   const BluetoothScanView({super.key});
@@ -28,7 +29,14 @@ class BluetoothScanView extends StatelessWidget {
                 child: Text('No devices found. Try scanning again.'),
               );
             }
-            return DeviceList(devices: state.devices);
+            return BlocBuilder<DeviceConnectionBloc, DeviceConnectionState>(
+              builder: (context, connectionState) {
+                return DeviceList(
+                  devices: state.devices,
+                  connectionState: connectionState,
+                );
+              },
+            );
           }
           // Initial State
           return const Center(
@@ -47,7 +55,10 @@ class BluetoothScanView extends StatelessWidget {
 
 class DeviceList extends StatelessWidget {
   final List<Device> devices;
-  const DeviceList({super.key, required this.devices});
+  final DeviceConnectionState connectionState;
+
+  const DeviceList(
+      {super.key, required this.devices, required this.connectionState});
 
   @override
   Widget build(BuildContext context) {
@@ -55,12 +66,62 @@ class DeviceList extends StatelessWidget {
       itemCount: devices.length,
       itemBuilder: (context, index) {
         final device = devices[index];
-        return ListTile(
-          title: Text(device.name),
-          subtitle: Text(device.address),
-          leading: const Icon(Icons.bluetooth),
+        return DeviceListItem(
+          device: device,
+          connectionState: connectionState,
         );
       },
+    );
+  }
+}
+
+class DeviceListItem extends StatelessWidget {
+  final Device device;
+  final DeviceConnectionState connectionState;
+
+  const DeviceListItem({
+    super.key,
+    required this.device,
+    required this.connectionState,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final connectionBloc = context.read<DeviceConnectionBloc>();
+    Widget trailing;
+    bool isConnecting = false;
+
+    final state = connectionState;
+    if (state is ConnectionInProgress && state.deviceId == device.id) {
+      trailing = const CircularProgressIndicator();
+      isConnecting = true;
+    } else if (state is ConnectionSuccess && state.deviceId == device.id) {
+      trailing = IconButton(
+        icon: const Icon(Icons.bluetooth_connected, color: Colors.green),
+        onPressed: () => connectionBloc.add(DisconnectRequested(device)),
+      );
+    } else if (state is ConnectionFailure && state.deviceId == device.id) {
+      trailing = IconButton(
+        icon: const Icon(Icons.error, color: Colors.red),
+        onPressed: () => connectionBloc.add(ConnectRequested(device)),
+        tooltip: state.error,
+      );
+    } else {
+      trailing = ElevatedButton(
+        child: const Text('Connect'),
+        onPressed: () => connectionBloc.add(ConnectRequested(device)),
+      );
+    }
+
+    return ListTile(
+      title: Text(device.name),
+      subtitle: Text(device.address),
+      leading: const Icon(Icons.bluetooth),
+      trailing: trailing,
+      enabled: !isConnecting,
+      onTap: isConnecting
+          ? null
+          : () => connectionBloc.add(ConnectRequested(device)),
     );
   }
 } 

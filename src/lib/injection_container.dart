@@ -13,6 +13,7 @@ import 'domain/usecases/connect_to_device_usecase.dart';
 import 'domain/usecases/disconnect_from_device_usecase.dart';
 import 'domain/usecases/scan_for_devices_usecase.dart';
 import 'presentation/features/bluetooth_scan/bloc/bluetooth_scan_bloc.dart';
+import 'presentation/features/device_connection/bloc/device_connection_bloc.dart';
 
 // Service Locator
 final sl = GetIt.instance;
@@ -23,6 +24,10 @@ Future<void> init() async {
 
   // BLoCs
   sl.registerFactory(() => BluetoothScanBloc(scanForDevicesUseCase: sl()));
+  sl.registerFactory(() => DeviceConnectionBloc(
+        connectToDeviceUseCase: sl(),
+        disconnectFromDeviceUseCase: sl(),
+      ));
 
   // Use Cases
   sl.registerLazySingleton(() => SendMessageUseCase(sl()));
