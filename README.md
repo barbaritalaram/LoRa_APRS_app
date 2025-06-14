@@ -17,8 +17,8 @@ Enable communication between smartphones and LoRa APRS devices via Bluetooth (BT
 ## 📚 Documentation
 
 - [Technical specifications](docs/specs/)
-- [Development plan](docs/plan.md) *(public only)*
-- [User guide](docs/guide.md) *(optional)*
+- [Development plan](docs/plan.md)
+- [User guide](docs/guide.md)
 
 ## 🛠️ Technologies
 
@@ -30,16 +30,6 @@ Enable communication between smartphones and LoRa APRS devices via Bluetooth (BT
 ## 🤝 Contributing
 
 Contributions are welcome! Please review `CONTRIBUTING.md` before submitting a PR.
-
-## 🛡️ Privacy & Security
-
-- **Strict rule:** No private or internal planning information is ever exposed in this repository.
-- All sensitive information is managed locally and privately.
-- The `.gitignore` file is always kept up to date to protect privacy.
-
-## 📄 License
-
-[MIT](LICENSE) *(or your preferred license)*
 
 ---
 
