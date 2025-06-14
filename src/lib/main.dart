@@ -6,6 +6,7 @@ import 'package:src/infrastructure/services/logger_service.dart';
 
 import 'injection_container.dart' as di;
 import 'data/models/message_model.dart';
+import 'package:src/presentation/features/bluetooth_scan/view/bluetooth_scan_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,11 +33,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('Welcome to LoRa APRS App'),
-        ),
-      ),
+      home: const BluetoothScanPage(),
     );
   }
 }

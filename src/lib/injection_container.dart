@@ -12,6 +12,7 @@ import 'infrastructure/services/logger_service.dart';
 import 'domain/usecases/connect_to_device_usecase.dart';
 import 'domain/usecases/disconnect_from_device_usecase.dart';
 import 'domain/usecases/scan_for_devices_usecase.dart';
+import 'presentation/features/bluetooth_scan/bloc/bluetooth_scan_bloc.dart';
 
 // Service Locator
 final sl = GetIt.instance;
@@ -19,6 +20,9 @@ final sl = GetIt.instance;
 Future<void> init() async {
   // Services
   sl.registerLazySingleton(() => LoggerService());
+
+  // BLoCs
+  sl.registerFactory(() => BluetoothScanBloc(scanForDevicesUseCase: sl()));
 
   // Use Cases
   sl.registerLazySingleton(() => SendMessageUseCase(sl()));
