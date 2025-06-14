@@ -9,6 +9,10 @@ import 'infrastructure/datasources/local_datasource_impl.dart';
 import 'infrastructure/datasources/remote_datasource_impl.dart';
 import 'infrastructure/services/logger_service.dart';
 
+import 'domain/usecases/connect_to_device_usecase.dart';
+import 'domain/usecases/disconnect_from_device_usecase.dart';
+import 'domain/usecases/scan_for_devices_usecase.dart';
+
 // Service Locator
 final sl = GetIt.instance;
 
@@ -18,14 +22,22 @@ void init() {
 
   // Use Cases
   sl.registerLazySingleton(() => SendMessageUseCase(sl()));
+  sl.registerLazySingleton(() => ScanForDevicesUseCase(sl()));
+  sl.registerLazySingleton(() => ConnectToDeviceUseCase(sl()));
+  sl.registerLazySingleton(() => DisconnectFromDeviceUseCase(sl()));
 
   // Repositories
   sl.registerLazySingleton<IMessageRepository>(
-    () => MessageRepositoryImpl(remoteDatasource: sl(), localDatasource: sl()),
+    () => MessageRepositoryImpl(
+      localDatasource: sl(),
+      remoteDatasource: sl(),
+    ),
   );
 
   // Datasources
-  sl.registerLazySingleton<IRemoteDatasource>(() => RemoteDatasourceImpl());
+  sl.registerLazySingleton<IRemoteDatasource>(
+    () => RemoteDatasourceImpl(logger: sl()),
+  );
   sl.registerLazySingleton<ILocalDatasource>(
     () => LocalDatasourceImpl(logger: sl()),
   );

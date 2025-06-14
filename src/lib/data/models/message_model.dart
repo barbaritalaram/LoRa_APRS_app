@@ -50,6 +50,15 @@ class MessageModel extends Message {
     );
   }
 
+  factory MessageModel.fromEntity(Message entity) => MessageModel(
+        id: entity.id,
+        senderId: entity.senderId,
+        recipientId: entity.recipientId,
+        payload: entity.payload,
+        timestamp: entity.timestamp,
+        isEncrypted: entity.isEncrypted,
+      );
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
